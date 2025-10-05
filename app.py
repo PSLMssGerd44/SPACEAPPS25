@@ -59,21 +59,21 @@ def plot_feature_importance(metrics):
 
 
 # --- UI Layout ---
-st.title("🛰️ Exoplanet Analysis & Classification Dashboard")
+st.title("Exoplanetary classification: An ensamble model prediction approach  🛰️ 🪐 ")
+
 st.write("""
-This tool uses a high-performance **Ensemble Model** trained on a merged dataset from the **Kepler, K2, and TESS missions**. 
-Use the tabs below to perform live classifications or to explore the model's performance metrics from its last training run.
+This tool uses a high-performance Ensemble Model trained on a merged dataset from the Kepler, K2, and TESS missions. 
+Use the tabs below to perform live classifications by changing the hyperparameters from the left tab and view the accuracy and confidence each model contributed to the ensemble outcome. Explore the model's performance metrics from its last training run and get more context from the project overview tab.
 """)
 
 if pipeline:
     # --- TABS ---
-    tab1, tab2 = st.tabs(["📊 Live Classification", "📈 Model Performance Metrics"])
+    tab1, tab2, tab3 = st.tabs(["📊 Live Classification", "📈 Model Performance", "📖 Project Overview"])
 
     # --- CLASSIFICATION TAB ---
     with tab1:
         st.header("Classify a New Signal")
         
-        # --- Sidebar for User Input ---
         with st.sidebar:
             st.header("Signal Characteristics")
             input_data = {}
@@ -89,7 +89,6 @@ if pipeline:
         st.dataframe(input_df)
 
         if st.button("Classify Signal"):
-            # --- Ensemble Prediction ---
             st.subheader("Ensemble Model Prediction")
             prediction = pipeline.predict(input_df)[0]
             prediction_proba = pipeline.predict_proba(input_df)[0]
@@ -101,7 +100,6 @@ if pipeline:
             col1.metric(label="Predicted Class", value=result_class)
             col2.metric(label="Model Confidence", value=f"{confidence:.2%}")
             
-            # --- Individual Model Breakdown ---
             st.subheader("Individual Model Predictions (The 'Voters')")
             st.write("See how each model in the ensemble contributed to the final prediction.")
             
@@ -114,8 +112,6 @@ if pipeline:
 
             for i, model in enumerate(base_models):
                 with cols[i]:
-                    # --- THIS IS THE FIX ---
-                    # Ensure the prediction is a standard Python integer
                     pred_ind = int(model.predict(input_scaled)[0])
                     prob_ind = model.predict_proba(input_scaled)[0]
                     
@@ -143,3 +139,52 @@ if pipeline:
         with col2:
             st.subheader("Feature Importance")
             plot_feature_importance(metrics)
+
+    # --- NEW: OVERVIEW TAB ---
+    with tab3:
+        
+        st.subheader("Automating Discovery")
+        st.markdown("""
+        Space telescopes missions have generated a massive amount of data throughout the years, identifying thousands of potential exoplanets. Historically, vetting these candidates to distinguish real planets from instrumental noise or other astrophysical phenomena (like binary stars) has been a manual, time-consuming process.
+
+        The goal of this project is to provide a reliable Machine Learning classification and prediction model that can enable faster and more efficient analysis of new and existing astronomical data while remaining open and truthful about its own confidence and accuracy.
+        """)
+
+        st.subheader("A Multi-Mission Approach")
+        st.markdown("""
+        This model was trained on a merged dataset combining publicly available data from three key NASA missions:
+        *   **Kepler:** The pioneering mission that provided a vast, deep survey of one patch of the sky.
+        *   **K2:** The repurposed Kepler mission, which surveyed different areas of the sky along the ecliptic.
+        *   **TESS:** The current-generation all-sky survey mission.
+
+        By combining these sources, the model learns from a wider variety of stars and signal types, making it more robust and general-purpose than a model trained on a single mission's data. Aditionally, the model combines characteristics present in all three missions, such as transit features and stellar properties, to try to guarantee a confident outcome.
+        """)
+
+        st.subheader("The Variables That Matter")
+        st.markdown("Recognizing how critical feature selection is, the model takes a set of variables that have direct physical significance to the transit method of exoplanet detection.")
+        
+        st.markdown("#### Transit Signature")
+        st.markdown("""
+        *   `period_days`: **Orbital Period.** The time it takes for the planet to complete one orbit. A consistent repeating period is the strongest evidence of an orbiting body.
+        *   `duration_hours`: **Transit Duration.** How long the dimming event lasts. This must be physically plausible for a planet crossing its star.
+        *   `depth_ppm`: **Transit Depth.** The percentage of starlight blocked. This is directly related to the planet's size relative to its star.
+        """)
+
+        st.markdown("#### Inferred and Stellar Properties")
+        st.markdown("""
+        *   `planet_radius_rearth`: **Planetary Radius.** The calculated size of the planet candidate (in Earth radii). This is a powerful feature for distinguishing between planet-sized objects and much larger stars or brown dwarfs.
+        *   `stellar_teff`: **Stellar Effective Temperature.** The temperature of the host star. This provides context about the type of star, which influences the expected signal and noise characteristics.
+        *   `stellar_radius_solar`: **Stellar Radius.** The size of the host star. This is critically important as it's needed to convert the relative transit depth into an absolute planetary radius.
+        *   `stellar_logg`: **Stellar Surface Gravity.** This helps differentiate between main-sequence (dwarf) stars and evolved giant stars, which have very different properties and are less likely to host detectable transiting planets.
+        """)
+        
+        st.subheader("The Ensemble")
+        st.markdown("""
+        Instead of relying on a single model, this project uses a "Voting Ensemble", which combines the predictions of three top-tier gradient boosting models: LightGBM, XGBoost, and CatBoost. This approach leverages the strengths of each individual model to create a more accurate and robust overall classifier. The idea was adapted from Luz, T. S. F., Braga, R. A. S., & Ribeiro, E. R. (2024). Assessment of Ensemble-Based Machine Learning Algorithms for Exoplanet Identification. Electronics, 13(19), 3950.
+        
+                    
+        This ensemble uses 'soft' voting. Rather than a simple majority vote, it averages the confidence scores (probabilities) from each of the three models to make a final, nuanced decision. This is a state-of-the-art technique for achieving high performance in classification tasks.
+        """)
+
+else:
+    st.info("Awaiting model and data assets...")
