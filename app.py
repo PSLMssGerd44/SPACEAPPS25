@@ -4,29 +4,54 @@ import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import ConfusionMatrixDisplay
+import requests
+from io import BytesIO
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="Exoplanet Analysis Dashboard",
+    page_title="Exoplanet Classification Ensemble Model",
     page_icon="🛰️",
     layout="wide"
 )
 
-# --- Load Model and Assets ---
+# --- URLs to your raw files on GitHub ---
+# This is the magic part that makes deployment work.
+BASE_URL = "https://raw.githubusercontent.com/PSLMssGerd44/SPACEAPPS25/main/"
+URL_MODEL = BASE_URL + "exoplanet_ensemble_model.joblib"
+URL_METRICS = BASE_URL + "training_metrics.joblib"
+URL_COLUMNS = BASE_URL + "feature_columns.joblib"
+URL_DATA = BASE_URL + "exoplanet_data_merged_for_ensemble.csv"
+
+
+# --- Updated Loading Function to Download from URL ---
 @st.cache_resource
-def load_assets():
-    """Load the trained pipeline, feature columns, full dataset, and metrics."""
+def load_assets_from_url():
+    """Load the trained pipeline, metrics, etc., by downloading them from GitHub."""
     try:
-        pipeline = joblib.load('exoplanet_ensemble_model.joblib')
-        columns = joblib.load('feature_columns.joblib')
-        metrics = joblib.load('training_metrics.joblib')
-        df_full = pd.read_csv('exoplanet_data_merged_for_ensemble.csv')
+        # Download and load the model
+        model_res = requests.get(URL_MODEL)
+        model_res.raise_for_status()
+        pipeline = joblib.load(BytesIO(model_res.content))
+
+        # Download and load the metrics
+        metrics_res = requests.get(URL_METRICS)
+        metrics_res.raise_for_status()
+        metrics = joblib.load(BytesIO(metrics_res.content))
+
+        # Download and load the columns
+        columns_res = requests.get(URL_COLUMNS)
+        columns_res.raise_for_status()
+        columns = joblib.load(BytesIO(columns_res.content))
+        
+        # Download and load the full dataset for context
+        df_full = pd.read_csv(URL_DATA)
+        
         return pipeline, columns, df_full, metrics
-    except FileNotFoundError:
-        st.error("Model assets not found. Please run `data_preparation.py` and `train_model.py` first.")
+    except Exception as e:
+        st.error(f"Error loading assets from URL. Please check your URLs and repository permissions. Error: {e}")
         return None, None, None, None
 
-pipeline, feature_columns, df_full, metrics = load_assets()
+pipeline, feature_columns, df_full, metrics = load_assets_from_url()
 disposition_map_inv = {0: 'False Positive', 1: 'Candidate', 2: 'Confirmed'}
 class_names = list(disposition_map_inv.values())
 
