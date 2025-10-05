@@ -1,0 +1,20 @@
+# Python cache and env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+.ipynb_checkpoints/
+
+# Data
+*.csv
+*.h5
+*.pkl
+*.npy
+*.npz
+
+# OS and IDE files
+.DS_Store
+.vscode/
+.idea/
