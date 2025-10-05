@@ -16,42 +16,30 @@ st.set_page_config(
 
 # --- URLs to your raw files on GitHub ---
 # This is the magic part that makes deployment work.
-BASE_URL = "https://raw.githubusercontent.com/PSLMssGerd44/SPACEAPPS25/main/"
-URL_MODEL = BASE_URL + "exoplanet_ensemble_model.joblib"
-URL_METRICS = BASE_URL + "training_metrics.joblib"
-URL_COLUMNS = BASE_URL + "feature_columns.joblib"
-URL_DATA = BASE_URL + "exoplanet_data_merged_for_ensemble.csv"
+# BASE_URL = "https://raw.githubusercontent.com/PSLMssGerd44/SPACEAPPS25/main/"
+# URL_MODEL = BASE_URL + "exoplanet_ensemble_model.joblib"
+# URL_METRICS = BASE_URL + "training_metrics.joblib"
+# URL_COLUMNS = BASE_URL + "feature_columns.joblib"
+# URL_DATA = BASE_URL + "exoplanet_data_merged_for_ensemble.csv"
 
 
-# --- Updated Loading Function to Download from URL ---
+# --- Updated Loading Function to Load from Local Files ---
 @st.cache_resource
-def load_assets_from_url():
-    """Load the trained pipeline, metrics, etc., by downloading them from GitHub."""
+def load_assets_from_local():
+    """Load the trained pipeline, metrics, etc., from local files."""
     try:
-        # Download and load the model
-        model_res = requests.get(URL_MODEL)
-        model_res.raise_for_status()
-        pipeline = joblib.load(BytesIO(model_res.content))
-
-        # Download and load the metrics
-        metrics_res = requests.get(URL_METRICS)
-        metrics_res.raise_for_status()
-        metrics = joblib.load(BytesIO(metrics_res.content))
-
-        # Download and load the columns
-        columns_res = requests.get(URL_COLUMNS)
-        columns_res.raise_for_status()
-        columns = joblib.load(BytesIO(columns_res.content))
-        
-        # Download and load the full dataset for context
-        df_full = pd.read_csv(URL_DATA)
+        # Load local files
+        pipeline = joblib.load('exoplanet_ensemble_model.joblib')
+        metrics = joblib.load('training_metrics.joblib')
+        columns = joblib.load('feature_columns.joblib')
+        df_full = pd.read_csv('exoplanet_data_merged_for_ensemble.csv')
         
         return pipeline, columns, df_full, metrics
     except Exception as e:
-        st.error(f"Error loading assets from URL. Please check your URLs and repository permissions. Error: {e}")
+        st.error(f"Error loading local assets. Make sure you've run train_model.py first. Error: {e}")
         return None, None, None, None
 
-pipeline, feature_columns, df_full, metrics = load_assets_from_url()
+pipeline, feature_columns, df_full, metrics = load_assets_from_local()
 disposition_map_inv = {0: 'False Positive', 1: 'Candidate', 2: 'Confirmed'}
 class_names = list(disposition_map_inv.values())
 
@@ -212,4 +200,4 @@ if pipeline:
         """)
 
 else:
-    st.info("Awaiting model and data assets...")
+    st.info("Awaiting model and data assets. Please run 'python train_model.py' first to generate the required files.")
