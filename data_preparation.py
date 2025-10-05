@@ -1,6 +1,6 @@
 import pandas as pd
 
-INPUT_FILE = 'filtered_unified.csv'
+INPUT_FILE = 'df_final_cleaned.csv'
 OUTPUT_FILE = 'exoplanet_data_merged_for_ensemble.csv'
 
 def prepare_merged_data_for_ensemble():
